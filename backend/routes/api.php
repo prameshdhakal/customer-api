@@ -3,11 +3,6 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 
-// $this->router->group([
-//     'middleware' => ['auth']
-// ], function () {
-//     // login route
-// });
 $this->router->post('/login', [AuthController::class, 'login']);
 $this->router->post('/logout', [AuthController::class, 'logout']);
 

@@ -64,6 +64,11 @@ class CustomerController extends BaseController
 
     public function update($id)
     {
+        // progress: checks auth user and disable update if accendently occurs 
+        // if ($_SESSION['user']['id'] === $id) {
+        //     return json_response(null, 204, true, 'You are not allowed to perform action.');
+        // }
+
         $request = $this->getJsonInput(['name', 'email', 'password', 'city', 'state', 'zipcode', 'geolat', 'geolng']);
 
         $validator = new Validator($request);
@@ -106,6 +111,11 @@ class CustomerController extends BaseController
 
     public function destroy($id)
     {
+        // progress: checks auth user and disable delete if accendently occurs 
+        // if ($_SESSION['user']['id'] === $id) {
+        //     return json_response(null, 204, true, 'You are not allowed to perform action.');
+        // }
+
         Customer::find($id)->delete();
         return json_response(null, 204, true, 'Customer deleted successfully.');
     }
