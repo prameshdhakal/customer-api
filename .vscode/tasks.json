@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "api",
+      "type": "shell",
+      "command": ["cd backend && php -S localhost:8000 -t public/"]
+    },
+    {
+      "label": "frontend",
+      "type": "shell",
+      "command": ["cd frontend && yarn dev"]
+    }
+  ]
+}
