@@ -124,22 +124,32 @@ function Table() {
       {
         id: "actions",
         header: "Actions",
-        cell: ({ row }) => (
-          <div>
-            <button
-              onClick={() => handleOpenModal("edit", row.original)}
-              disabled={isCurrUser}
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => handleDelete(row.original.id)}
-              disabled={isCurrUser}
-            >
-              Delete
-            </button>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const currentUserEmail = JSON.parse(
+            localStorage.getItem("user")
+          ).email;
+          const rowEmail = row.original.email;
+
+          // disabled current user for actions (edit and delete)
+          const isCurrUser = currentUserEmail == rowEmail;
+
+          return (
+            <div>
+              <button
+                onClick={() => handleOpenModal("edit", row.original)}
+                disabled={isCurrUser}
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDelete(row.original.id)}
+                disabled={isCurrUser}
+              >
+                Delete
+              </button>
+            </div>
+          );
+        },
       },
     ],
     []
@@ -339,15 +349,29 @@ function Table() {
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map((row, index) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {table.getRowModel().rows.map((row, index) => {
+            const currentUserEmail = JSON.parse(
+              localStorage.getItem("user")
+            ).email;
+            const rowEmail = row.original.email;
+            const isCurrUser = currentUserEmail == rowEmail;
+
+            return (
+              <tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <td
+                    key={cell.id}
+                    style={{
+                      backgroundColor: isCurrUser ? "gray" : "transparent",
+                      color: isCurrUser ? "white" : "black",
+                    }}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <button className="add-new" onClick={() => handleOpenModal("create")}>
