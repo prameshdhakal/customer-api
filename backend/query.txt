@@ -1,0 +1,148 @@
+-- create addresses for customers
+
+CREATE TABLE IF NOT EXISTS `addresses` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `customer_id` INT(10) UNSIGNED NOT NULL,
+  `address` VARCHAR(128) NOT NULL,
+  `city` VARCHAR(64) NOT NULL,
+  `state` CHAR(2) NOT NULL,
+  `zip` MEDIUMINT(8) UNSIGNED NOT NULL,
+  `sqft` SMALLINT(5) UNSIGNED NOT NULL,
+  `year_built` SMALLINT(5) UNSIGNED NOT NULL,
+  `geolat` DECIMAL(10,6) DEFAULT NULL,
+  `geolng` DECIMAL(10,6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `geo_coords` (`geolat`, `geolng`),
+  CONSTRAINT `fk_customer_id`
+    FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+INSERT INTO `addresses` (`customer_id`, `address`, `city`, `state`, `zip`, `price`, `sqft`, `year_built`, `geolat`, `geolng`) VALUES
+(1, '123 Elm Street', 'Springfield', 'IL', 62701, 200000, 1500, 1990, 39.7817, -89.6501),
+(2, '456 Oak Avenue', 'Lincoln', 'NE', 68502, 250000, 1800, 1985, 40.8136, -96.7026),
+(2, '789 Maple Drive', 'Denver', 'CO', 80203, 300000, 2000, 2000, 39.7392, -104.9903),
+(2, '101 Pine Lane', 'Austin', 'TX', 73301, 350000, 2500, 2010, 30.2672, -97.7431),
+(2, '202 Birch Road', 'Seattle', 'WA', 98101, 400000, 2200, 1995, 47.6062, -122.3321),
+(1, '303 Cedar Avenue', 'Phoenix', 'AZ', 85001, 180000, 1600, 1980, 33.4484, -112.0740),
+(1, '404 Walnut Street', 'Miami', 'FL', 33101, 320000, 1400, 1975, 25.7617, -80.1918),
+(1, '505 Ash Boulevard', 'Nashville', 'TN', 37201, 260000, 1700, 2005, 36.1627, -86.7816),
+(1, '606 Fir Way', 'Atlanta', 'GA', 30301, 280000, 1900, 2012, 33.7490, -84.3880),
+(2, '707 Redwood Circle', 'Portland', 'OR', 97201, 350000, 2100, 1999, 45.5152, -122.6784),
+(2, '808 Chestnut Lane', 'Dallas', 'TX', 75201, 275000, 1550, 1990, 32.7767, -96.7970),
+(3, '909 Spruce Court', 'Chicago', 'IL', 60601, 320000, 1750, 1988, 41.8781, -87.6298),
+(3, '111 Sycamore Road', 'Boston', 'MA', 02101, 450000, 2400, 1895, 42.3601, -71.0589),
+(3, '222 Poplar Street', 'San Francisco', 'CA', 94101, 600000, 1900, 1920, 37.7749, -122.4194),
+(2, '333 Beech Avenue', 'Las Vegas', 'NV', 89101, 310000, 1300, 2015, 36.1699, -115.1398),
+(2, '444 Willow Lane', 'Detroit', 'MI', 48201, 190000, 1250, 1965, 42.3314, -83.0458),
+(1, '555 Hickory Drive', 'Charlotte', 'NC', 28201, 285000, 1800, 2008, 35.2271, -80.8431),
+(1, '666 Cypress Blvd', 'San Diego', 'CA', 92101, 400000, 2500, 2003, 32.7157, -117.1611),
+(1, '777 Palm Street', 'Orlando', 'FL', 32801, 295000, 1650, 1979, 28.5383, -81.3792),
+(1, '888 Banyan Avenue', 'Denver', 'CO', 80204, 330000, 2100, 1997, 39.7392, -104.9903),
+(1, '999 Magnolia Way', 'Seattle', 'WA', 98104, 385000, 2200, 1984, 47.6062, -122.3321),
+(1, '222 Juniper Drive', 'Sacramento', 'CA', 94203, 290000, 1450, 2010, 38.5816, -121.4944),
+(1, '333 Maple Blvd', 'Houston', 'TX', 77001, 325000, 1950, 1991, 29.7604, -95.3698),
+(1, '444 Birch Lane', 'Phoenix', 'AZ', 85002, 240000, 1550, 1970, 33.4484, -112.0740),
+(2, '555 Cedar Ave', 'Tucson', 'AZ', 85701, 210000, 1250, 1983, 32.2226, -110.9747),
+(2, '666 Ash St', 'Raleigh', 'NC', 27601, 270000, 1800, 1995, 35.7796, -78.6382),
+(2, '777 Elm Cir', 'San Jose', 'CA', 95101, 410000, 2300, 2001, 37.3382, -121.8863),
+(2, '888 Oak Ln', 'New York', 'NY', 10001, 550000, 2750, 1925, 40.7128, -74.0060),
+(2, '999 Spruce Dr', 'Philadelphia', 'PA', 19101, 360000, 1800, 1910, 39.9526, -75.1652),
+(2, '1010 Redwood Blvd', 'Salt Lake City', 'UT', 84101, 310000, 1500, 1980, 40.7608, -111.8910);
+
+// select address nearer to reference point
+SELECT 
+    a.*, 
+    c.*,
+    ( 6371 * 
+      ACOS(
+          COS(RADIANS(27.7012474)) * COS(RADIANS(a.geolat)) * 
+          COS(RADIANS(a.geolng) - RADIANS(85.3190894)) + 
+          SIN(RADIANS(27.7012474)) * SIN(RADIANS(a.geolat))
+      )
+    ) AS distance
+FROM 
+    addresses a
+JOIN 
+    customers c ON a.customer_id = c.id
+ORDER BY 
+    distance ASC;
+
+
+// getting nearer customer with latest address of another customer
+WITH LatestAddresses AS (
+    SELECT 
+        a.* 
+    FROM 
+        addresses a
+    INNER JOIN (
+        -- Subquery to find the latest address for each customer
+        SELECT 
+            customer_id, 
+            MAX(id) AS latest_id
+        FROM 
+            addresses
+        GROUP BY 
+            customer_id
+    ) latest ON a.id = latest.latest_id
+)
+SELECT 
+    la.*, 
+    c.*,
+    ( 6371 * 
+      ACOS(
+          COS(RADIANS(27.7012474)) * COS(RADIANS(la.geolat)) * 
+          COS(RADIANS(la.geolng) - RADIANS(85.3190894)) + 
+          SIN(RADIANS(27.7012474)) * SIN(RADIANS(la.geolat))
+      )
+    ) AS distance
+FROM 
+    LatestAddresses la
+JOIN 
+    customers c ON la.customer_id = c.id
+ORDER BY 
+    distance ASC;
+
+
+// round up distance into 3 decimal point
+WITH LatestAddresses AS (
+    SELECT 
+        a.* 
+    FROM 
+        addresses a
+    INNER JOIN (
+        -- Subquery to find the latest address for each customer
+        SELECT 
+            customer_id, 
+            MAX(id) AS latest_id
+        FROM 
+            addresses
+        GROUP BY 
+            customer_id
+    ) latest ON a.id = latest.latest_id
+)
+SELECT 
+    la.*, 
+    c.*,
+     CONCAT(
+        ROUND(
+            ( 6371 * 
+              ACOS(
+                  COS(RADIANS(27.7012474)) * COS(RADIANS(la.geolat)) * 
+                  COS(RADIANS(la.geolng) - RADIANS(85.3190894)) + 
+                  SIN(RADIANS(27.7012474)) * SIN(RADIANS(la.geolat))
+              )
+            ), 3
+        ),
+        ' km'
+    ) AS distance
+FROM 
+    LatestAddresses la
+JOIN 
+    customers c ON la.customer_id = c.id
+ORDER BY 
+    distance ASC;
+
+// Notes
+Globally-averaged radius: The average radius, which is about 6,371 kilometers (3,959 miles) 
